@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Higgsfield Prompt Studio · Seedance 2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070707;--bg2:#0e0e0e;--bg3:#161616;--bg4:#1e1e1e;
+  --border:#202020;--border2:#2a2a2a;
+  --gold:#D4A26A;--gold-dim:#7a5c38;--gold-glow:rgba(212,162,106,0.12);
+  --blue:#5BC4E0;--green:#5EC97E;--red:#E05252;--purple:#A78BFA;
+  --text:#E4E4E4;--muted:#5a5a5a;--muted2:#888;
+  --r:8px;--r2:12px;
+  --fh:'Bebas Neue',sans-serif;
+  --fb:'DM Sans',sans-serif;
+  --fm:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;font-size:14px;line-height:1.5;}
+
+/* ─── GRAIN OVERLAY ─── */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");pointer-events:none;z-index:999;opacity:0.25;}
+
+/* ─── HEADER ─── */
+.hdr{position:sticky;top:0;z-index:50;background:rgba(7,7,7,0.97);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;}
+.hdr-l{display:flex;align-items:center;gap:14px;}
+.logo{font-family:var(--fh);font-size:21px;letter-spacing:3px;color:var(--text);}
+.logo em{color:var(--gold);font-style:normal;}
+.pill{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1.2px;background:rgba(212,162,106,0.1);border:1px solid rgba(212,162,106,0.25);color:var(--gold);}
+.api-btn{padding:6px 14px;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:12px;cursor:pointer;transition:all .2s;font-family:var(--fb);}
+.api-btn:hover{color:var(--text);border-color:#444;}
+.api-btn.ok{color:var(--green);border-color:rgba(94,201,126,0.3);background:rgba(94,201,126,0.06);}
+
+/* ─── LAYOUT ─── */
+.wrap{max-width:1120px;margin:0 auto;padding:32px 24px 80px;}
+
+/* ─── PIPELINE NAV ─── */
+.pipeline{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:32px;}
+.pipe-step{background:var(--bg2);padding:16px 20px;cursor:pointer;transition:background .2s;border-right:1px solid var(--border);}
+.pipe-step:last-child{border-right:none;}
+.pipe-step:hover{background:var(--bg3);}
+.pipe-step.on{background:rgba(212,162,106,0.07);}
+.pipe-num{font-family:var(--fh);font-size:34px;color:var(--gold-dim);line-height:1;}
+.pipe-step.on .pipe-num{color:var(--gold);}
+.pipe-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+.pipe-step.on .pipe-title{color:var(--text);}
+.pipe-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* ─── SECTIONS ─── */
+.sec{display:none;animation:fadeIn .25s ease;}
+.sec.on{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ─── SECTION HEADER ─── */
+.sec-hdr{margin-bottom:24px;}
+.sec-h1{font-family:var(--fh);font-size:26px;letter-spacing:2px;}
+.sec-h1 em{color:var(--gold);font-style:normal;}
+.sec-sub{font-size:12.5px;color:var(--muted2);margin-top:3px;}
+
+/* ─── TIP BOX ─── */
+.tip{background:rgba(212,162,106,0.05);border:1px solid rgba(212,162,106,0.15);border-left:3px solid var(--gold);border-radius:6px;padding:13px 18px;font-size:12.5px;color:#aaa;line-height:1.8;margin-bottom:24px;}
+.tip strong{color:var(--gold);}
+
+/* ─── CARD ─── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:22px;}
+.card-title{font-family:var(--fh);font-size:14px;letter-spacing:1.5px;color:var(--gold);margin-bottom:3px;}
+.card-sub{font-size:11px;color:var(--muted);margin-bottom:18px;}
+
+/* ─── GRIDS ─── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.span2{grid-column:1/-1;}
+
+/* ─── FORM ELEMENTS ─── */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;}
+.fg:last-child{margin-bottom:0;}
+label{font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted2);}
+input[type=text],input[type=password],textarea,select{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;color:var(--text);font-family:var(--fb);font-size:13px;width:100%;transition:border-color .2s;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold-dim);}
+textarea{resize:vertical;min-height:76px;line-height:1.55;}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid .span2{grid-column:1/-1;}
+
+/* ─── BUTTONS ─── */
+.btn-gold{width:100%;padding:14px;background:var(--gold);border:none;border-radius:var(--r);font-family:var(--fh);font-size:18px;letter-spacing:2px;color:#000;cursor:pointer;transition:all .2s;margin-top:16px;}
+.btn-gold:hover{background:#e8b87a;transform:translateY(-1px);}
+.btn-gold:disabled{background:var(--gold-dim);cursor:not-allowed;transform:none;color:#333;}
+.btn-outline{width:100%;padding:9px;background:var(--gold-glow);border:1px solid rgba(212,162,106,0.25);border-radius:6px;color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:10px;font-family:var(--fb);}
+.btn-outline:hover{background:rgba(212,162,106,0.18);}
+.btn-copy{position:absolute;top:11px;right:11px;padding:4px 11px;background:rgba(91,196,224,0.08);border:1px solid rgba(91,196,224,0.2);border-radius:5px;color:var(--blue);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px;font-family:var(--fb);}
+.btn-copy:hover{background:rgba(91,196,224,0.18);}
+.btn-copy.ok{border-color:rgba(94,201,126,.4);color:var(--green);}
+.btn-sm{padding:4px 11px;background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:5px;color:var(--muted2);font-size:10px;cursor:pointer;transition:all .2s;font-family:var(--fb);}
+.btn-sm:hover{color:var(--text);border-color:#444;}
+.btn-sm.ok{border-color:rgba(94,201,126,.4);color:var(--green);}
+
+/* ─── FORMAT CARDS ─── */
+.fmt-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;cursor:pointer;transition:all .2s;}
+.fmt-card:hover{border-color:#383838;background:var(--bg3);}
+.fmt-card.on{border-color:var(--gold);background:rgba(212,162,106,0.07);}
+.fmt-icon{font-size:24px;margin-bottom:8px;}
+.fmt-name{font-size:13px;font-weight:700;margin-bottom:3px;}
+.fmt-card.on .fmt-name{color:var(--gold);}
+.fmt-desc{font-size:11px;color:var(--muted);line-height:1.55;}
+.fmt-tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.5px;margin-bottom:5px;}
+.fmt-tag.viral{background:rgba(224,82,82,.12);color:var(--red);border:1px solid rgba(224,82,82,.25);}
+.fmt-tag.trend{background:rgba(91,196,224,.1);color:var(--blue);border:1px solid rgba(91,196,224,.25);}
+.fmt-tag.adv{background:rgba(212,162,106,.1);color:var(--gold);border:1px solid rgba(212,162,106,.25);}
+.fmt-tag.anim{background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.25);}
+
+/* ─── FORM PANELS ─── */
+.form-panel{display:none;}
+.form-panel.on{display:block;animation:fadeIn .2s ease;}
+
+/* ─── OUTPUT ─── */
+.out-wrap{margin-top:22px;display:none;}
+.out-wrap.on{display:block;}
+.out-tabs{display:flex;gap:6px;margin-bottom:13px;align-items:center;}
+.out-tab{padding:6px 18px;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;font-family:var(--fb);letter-spacing:.5px;}
+.out-tab.on{border-color:var(--blue);color:var(--blue);}
+.out-badge{margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--fm);}
+.out-box{background:#060c11;border:1px solid #152030;border-radius:var(--r2);padding:20px;position:relative;min-height:100px;}
+.out-text{font-family:var(--fm);font-size:12px;line-height:1.9;color:#8ec8e0;white-space:pre-wrap;word-break:break-word;}
+.out-pane{display:none;}
+.out-pane.on{display:block;}
+
+/* ─── LOADING ─── */
+.loading{display:none;text-align:center;padding:36px;color:var(--muted);}
+.loading.on{display:block;}
+.loading-inner{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.2s infinite;}
+.dot:nth-child(2){animation-delay:.2s;}
+.dot:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.loading-msg{font-size:12px;margin-top:12px;color:var(--muted);}
+
+/* ─── SNIPPETS ─── */
+.snip{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;}
+.snip-lbl{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold-dim);margin-bottom:8px;}
+.snip-txt{font-family:var(--fm);font-size:11px;color:#5a5a5a;line-height:1.6;margin-bottom:10px;max-height:74px;overflow:hidden;}
+
+/* ─── RULES ─── */
+.rule-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;}
+.rule-item{font-size:12.5px;color:#888;line-height:1.9;}
+.rule-item strong{color:var(--text);}
+.rule-item .bad strong{color:var(--red);}
+
+/* ─── DIVIDER ─── */
+.sep{height:1px;background:var(--border);margin:24px 0;}
+
+/* ─── MODAL ─── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.on{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:30px;width:400px;max-width:92vw;}
+.modal-h{font-family:var(--fh);font-size:20px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;}
+.modal-sub{font-size:12px;color:var(--muted2);margin-bottom:18px;line-height:1.7;}
+.modal-sub a{color:var(--gold);text-decoration:none;}
+.modal-acts{display:flex;gap:10px;margin-top:14px;}
+.modal-ok{flex:1;padding:10px;background:var(--gold);border:none;border-radius:6px;font-family:var(--fh);font-size:15px;letter-spacing:1px;color:#000;cursor:pointer;}
+.modal-cancel{padding:10px 18px;background:none;border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:13px;cursor:pointer;font-family:var(--fb);}
+
+/* ─── STATIC PROMPT BOX ─── */
+.static-box{background:#060c11;border:1px solid #152030;border-radius:var(--r);padding:14px;position:relative;margin-bottom:12px;}
+.static-box .out-text{font-size:11.5px;}
+
+/* ─── IDEA CARDS ─── */
+.idea-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px;}
+.idea-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;transition:border-color .2s;display:flex;flex-direction:column;}
+.idea-card:hover{border-color:#383838;}
+.idea-card-top{padding:20px;flex:1;}
+.idea-meta{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.idea-num{font-family:var(--fh);font-size:28px;color:var(--gold-dim);line-height:1;}
+.idea-format-tag{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.8px;background:rgba(91,196,224,.1);color:var(--blue);border:1px solid rgba(91,196,224,.25);}
+.idea-title{font-family:var(--fh);font-size:16px;letter-spacing:1px;color:var(--text);margin-bottom:8px;line-height:1.2;}
+.idea-concept{font-size:12px;color:var(--muted2);line-height:1.7;}
+.idea-prompt-area{border-top:1px solid var(--border);padding:14px;}
+.idea-prompt-tabs{display:flex;gap:5px;margin-bottom:10px;}
+.idea-tab{padding:4px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;font-family:var(--fb);}
+.idea-tab.on{border-color:var(--blue);color:var(--blue);}
+.idea-prompt-box{background:#060c11;border:1px solid #152030;border-radius:6px;padding:12px;position:relative;max-height:180px;overflow-y:auto;}
+.idea-prompt-box pre{font-family:var(--fm);font-size:11px;line-height:1.75;color:#8ec8e0;white-space:pre-wrap;word-break:break-word;}
+.idea-prompt-box .btn-copy{top:8px;right:8px;}
+.idea-prompt-pane{display:none;}
+.idea-prompt-pane.on{display:block;}
+.idea-skeleton{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:24px;display:flex;flex-direction:column;gap:12px;}
+.skel-line{height:12px;background:var(--bg3);border-radius:4px;animation:skelPulse 1.4s infinite;}
+.skel-line.short{width:40%;}
+.skel-line.med{width:70%;}
+@keyframes skelPulse{0%,100%{opacity:.4}50%{opacity:.9}}
+
+/* ─── IDEAS GENRE GRID ─── */
+.genre-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
+.genre-btn{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;cursor:pointer;transition:all .2s;text-align:center;}
+.genre-btn:hover{border-color:#383838;background:var(--bg3);}
+.genre-btn.on{border-color:var(--gold);background:rgba(212,162,106,.08);}
+.genre-icon{font-size:22px;margin-bottom:5px;}
+.genre-label{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);}
+.genre-btn.on .genre-label{color:var(--gold);}
+
+/* ─── MOOD ROW ─── */
+.mood-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.mood-btn{padding:6px 14px;background:var(--bg2);border:1px solid var(--border2);border-radius:20px;color:var(--muted2);font-size:12px;cursor:pointer;transition:all .2s;font-family:var(--fb);}
+.mood-btn:hover{color:var(--text);border-color:#444;}
+.mood-btn.on{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.4);color:var(--purple);}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+  .pipeline{grid-template-columns:repeat(3,1fr);}
+  .g2,.g3,.form-grid,.rule-row,.idea-grid,.genre-grid{grid-template-columns:1fr;}
+  .genre-grid{grid-template-columns:repeat(3,1fr);}
+  .hdr{padding:0 16px;}
+  .wrap{padding:20px 14px;}
+  .fmt-card{padding:13px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ MODAL: API KEY ═══ -->
+<div class="modal-bg" id="apiModal">
+  <div class="modal">
+    <div class="modal-h">API KEY</div>
+    <div class="modal-sub">
+      Ingresa tu Anthropic API Key para activar la generación IA.<br>
+      Se guarda solo en tu navegador. Obtén una en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+    </div>
+    <div class="fg">
+      <label>Anthropic API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-...">
+    </div>
+    <div class="modal-acts">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-ok" onclick="saveKey()">GUARDAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HEADER ═══ -->
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">HIGGSFIELD <em>PROMPT STUDIO</em></div>
+    <span class="pill">SEEDANCE 2.0</span>
+  </div>
+  <button class="api-btn" id="apiBtnEl" onclick="openModal()">⚙ Configurar API Key</button>
+</header>
+
+<div class="wrap">
+
+  <!-- ═══ PIPELINE NAV ═══ -->
+  <div class="pipeline">
+    <div class="pipe-step on" id="pipe-0" onclick="goSec(0)" style="background:rgba(212,162,106,0.1);border-bottom:2px solid var(--gold);">
+      <div class="pipe-num" style="color:var(--gold);">⚡</div>
+      <div class="pipe-title" style="color:var(--gold);">Ideas Auto</div>
+      <div class="pipe-sub">Dame todo hecho</div>
+    </div>
+    <div class="pipe-step" id="pipe-1" onclick="goSec(1)">
+      <div class="pipe-num">01</div>
+      <div class="pipe-title">Personajes</div>
+      <div class="pipe-sub">Cara + outfit + sheet</div>
+    </div>
+    <div class="pipe-step" id="pipe-2" onclick="goSec(2)">
+      <div class="pipe-num">02</div>
+      <div class="pipe-title">Locaciones</div>
+      <div class="pipe-sub">Escenarios + ref sheet</div>
+    </div>
+    <div class="pipe-step" id="pipe-3" onclick="goSec(3)">
+      <div class="pipe-num">03</div>
+      <div class="pipe-title">Video Prompts</div>
+      <div class="pipe-sub">Generación IA · 6 formatos</div>
+    </div>
+    <div class="pipe-step" id="pipe-4" onclick="goSec(4)">
+      <div class="pipe-num">04</div>
+      <div class="pipe-title">Biblioteca</div>
+      <div class="pipe-sub">Snippets listos</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECCIÓN 00 · IDEAS AUTOMÁTICAS             -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="sec on" id="sec-0">
+    <div class="sec-hdr">
+      <div class="sec-h1">⚡ <em>IDEAS AUTOMÁTICAS</em></div>
+      <div class="sec-sub">Elige el género y el mood — la IA inventa el personaje, la historia, la locación y el prompt completo. Tú solo copias y pegas.</div>
+    </div>
+
+    <!-- GENRE -->
+    <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px;">Género / Categoría</div>
+    <div class="genre-grid">
+      <div class="genre-btn on" id="genre-0" onclick="selGenre(0)"><div class="genre-icon">🔥</div><div class="genre-label">Viral / TikTok</div></div>
+      <div class="genre-btn" id="genre-1" onclick="selGenre(1)"><div class="genre-icon">⚔️</div><div class="genre-label">Acción</div></div>
+      <div class="genre-btn" id="genre-2" onclick="selGenre(2)"><div class="genre-icon">👻</div><div class="genre-label">Terror</div></div>
+      <div class="genre-btn" id="genre-3" onclick="selGenre(3)"><div class="genre-icon">😂</div><div class="genre-label">Comedia</div></div>
+      <div class="genre-btn" id="genre-4" onclick="selGenre(4)"><div class="genre-icon">🌌</div><div class="genre-label">Sci-Fi</div></div>
+      <div class="genre-btn" id="genre-5" onclick="selGenre(5)"><div class="genre-icon">🎨</div><div class="genre-label">Animación</div></div>
+      <div class="genre-btn" id="genre-6" onclick="selGenre(6)"><div class="genre-icon">🎤</div><div class="genre-label">K-Pop</div></div>
+      <div class="genre-btn" id="genre-7" onclick="selGenre(7)"><div class="genre-icon">🏆</div><div class="genre-label">Comercial</div></div>
+      <div class="genre-btn" id="genre-8" onclick="selGenre(8)"><div class="genre-icon">🧙</div><div class="genre-label">Fantasía</div></div>
+      <div class="genre-btn" id="genre-9" onclick="selGenre(9)"><div class="genre-icon">💔</div><div class="genre-label">Drama</div></div>
+    </div>
+
+    <!-- MOOD -->
+    <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px;">Mood / Energía</div>
+    <div class="mood-row">
+      <button class="mood-btn on" id="mood-0" onclick="selMood(0)">🌑 Oscuro</button>
+      <button class="mood-btn" id="mood-1" onclick="selMood(1)">⚡ Épico</button>
+      <button class="mood-btn" id="mood-2" onclick="selMood(2)">😄 Cómico</button>
+      <button class="mood-btn" id="mood-3" onclick="selMood(3)">💧 Emotivo</button>
+      <button class="mood-btn" id="mood-4" onclick="selMood(4)">🔮 Misterioso</button>
+      <button class="mood-btn" id="mood-5" onclick="selMood(5)">🌈 Colorido</button>
+      <button class="mood-btn" id="mood-6" onclick="selMood(6)">🔴 Violento</button>
+      <button class="mood-btn" id="mood-7" onclick="selMood(7)">💎 Luxury</button>
+    </div>
+
+    <!-- EXTRA HINT -->
+    <div class="fg" style="margin-bottom:20px;">
+      <label>Elemento especial (opcional) — personaje, objeto, lugar, referencia cultural</label>
+      <input type="text" id="idea-hint" placeholder="ej: una chica colombiana, un samurai en Tokyo, skincare brand, zombies en el metro...">
+    </div>
+
+    <!-- GENERATE -->
+    <button class="btn-gold" id="ideaBtn" onclick="doIdeas()" style="font-size:20px;padding:16px;">
+      🎲 GENERAR 3 IDEAS COMPLETAS
+    </button>
+
+    <!-- REGENERATE ROW -->
+    <div id="idea-regen-row" style="display:none;margin-top:12px;display:none;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;color:var(--muted);">¿No te convencen? Genera de nuevo — cada vez son ideas distintas.</span>
+      <button class="btn-outline" style="width:auto;margin-top:0;" onclick="doIdeas()">🔄 Regenerar ideas</button>
+    </div>
+
+    <!-- LOADING SKELETONS -->
+    <div id="ideas-loading" style="display:none;margin-top:24px;">
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <span style="margin-left:4px;">Inventando personajes, historias y prompts...</span>
+      </div>
+      <div class="idea-grid">
+        <div class="idea-skeleton"><div class="skel-line short"></div><div class="skel-line med"></div><div class="skel-line"></div><div class="skel-line med"></div><div class="skel-line short"></div></div>
+        <div class="idea-skeleton"><div class="skel-line med"></div><div class="skel-line short"></div><div class="skel-line"></div><div class="skel-line short"></div><div class="skel-line med"></div></div>
+        <div class="idea-skeleton"><div class="skel-line"></div><div class="skel-line med"></div><div class="skel-line short"></div><div class="skel-line"></div><div class="skel-line short"></div></div>
+      </div>
+    </div>
+
+    <!-- IDEAS OUTPUT -->
+    <div id="ideas-out" class="idea-grid" style="display:none;margin-top:24px;"></div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECCIÓN 01 · PERSONAJES                    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="sec" id="sec-1">
+    <div class="sec-hdr">
+      <div class="sec-h1">01 — <em>PERSONAJES</em></div>
+      <div class="sec-sub">Pipeline oficial: cara → outfit → fusión. Soul Cinema para cara y outfit · Nano Banana Pro para fusionar.</div>
+    </div>
+    <div class="tip">
+      <strong>Pipeline de 3 pasos:</strong> (1) Entrena tu Soul ID con tus fotos · (2) Genera la cara en Soul Cinema · (3) Genera el outfit por separado · (4) Fusiona con Nano Banana Pro usando el prompt de fusión. Este orden da la <strong>mayor consistencia visual</strong> en todos los shots.
+    </div>
+    <div class="g2">
+      <!-- CARA -->
+      <div class="card">
+        <div class="card-title">CARA / SOUL ID</div>
+        <div class="card-sub">Usa en Higgsfield Soul Cinema</div>
+        <div class="form-grid">
+          <div class="fg"><label>Género</label>
+            <select id="c-gen"><option>Male</option><option>Female</option><option>Non-binary</option></select>
+          </div>
+          <div class="fg"><label>Apariencia / Etnia</label>
+            <input type="text" id="c-eth" placeholder="ej: Latino, Asian, European...">
+          </div>
+          <div class="fg span2"><label>Rasgos faciales clave</label>
+            <input type="text" id="c-face" placeholder="ej: sharp jawline, hazel eyes, flawless skin, symmetrical features...">
+          </div>
+          <div class="fg"><label>Cabello</label>
+            <input type="text" id="c-hair" placeholder="ej: slick back wavy brown hair...">
+          </div>
+          <div class="fg"><label>Vello facial</label>
+            <input type="text" id="c-fhair" placeholder="ej: mustache, clean-shaven...">
+          </div>
+          <div class="fg span2"><label>Arquetipo del personaje</label>
+            <select id="c-arch">
+              <option>Action Hero / Protagonist — strong, determined</option>
+              <option>Spy / Secret Agent — sharp features, controlled</option>
+              <option>Police Officer — American cop uniform</option>
+              <option>K-Pop Idol — flawless, expressive, idol-level beauty</option>
+              <option>Villain / Antagonist — intense, commanding</option>
+              <option>Warrior / Fighter — athletic, battle-ready</option>
+              <option>Lover / Romance Lead — warm, expressive eyes</option>
+              <option>Fantasy / Sci-Fi Character — otherworldly</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-outline" onclick="genFace()">📋 Generar Prompt de Cara</button>
+        <div id="face-out" style="margin-top:13px;display:none;position:relative;">
+          <div class="static-box"><div class="out-text" id="face-txt"></div><button class="btn-copy" onclick="copyEl('face-txt',this)">COPIAR</button></div>
+        </div>
+      </div>
+      <!-- OUTFIT -->
+      <div class="card">
+        <div class="card-title">OUTFIT / ROPA</div>
+        <div class="card-sub">Usa en Higgsfield Soul Cinema</div>
+        <div class="form-grid">
+          <div class="fg span2"><label>Tipo de outfit</label>
+            <select id="o-type">
+              <option>Casual / Streetwear</option>
+              <option>Black tuxedo (James Bond look)</option>
+              <option>Military / Tactical gear</option>
+              <option>Police uniform</option>
+              <option>Futuristic Techwear</option>
+              <option>Fantasy / Epic armor</option>
+              <option>K-Pop stage outfit</option>
+              <option>Action / Combat suit</option>
+              <option>Luxury fashion editorial</option>
+            </select>
+          </div>
+          <div class="fg"><label>Colores principales</label>
+            <input type="text" id="o-col" placeholder="ej: black and gold, mustard yellow...">
+          </div>
+          <div class="fg"><label>Accesorios</label>
+            <input type="text" id="o-acc" placeholder="ej: cross necklace, cat-eye sunglasses...">
+          </div>
+          <div class="fg span2"><label>Prendas y detalles específicos</label>
+            <textarea id="o-det" placeholder="ej: oversized baggy cargo pants, multiple large side pockets, knee pad panels, chunky combat boots mid-calf, holographic bandage on nose bridge..."></textarea>
+          </div>
+        </div>
+        <button class="btn-outline" onclick="genOutfit()">📋 Generar Prompt de Outfit</button>
+        <div id="outfit-out" style="margin-top:13px;display:none;position:relative;">
+          <div class="static-box"><div class="out-text" id="outfit-txt"></div><button class="btn-copy" onclick="copyEl('outfit-txt',this)">COPIAR</button></div>
+        </div>
+      </div>
+      <!-- FUSION -->
+      <div class="card span2">
+        <div class="card-title">CHARACTER SHEET FUSION</div>
+        <div class="card-sub">Sube imagen de cara + imagen de outfit → Usa en Nano Banana Pro</div>
+        <div class="g2">
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--gold-dim);margin-bottom:8px;">FUSIÓN RÁPIDA</div>
+            <div class="static-box" style="position:relative;">
+              <div class="out-text" style="font-size:11.5px;">The character from image 1 wearing this outfit from image 2.
+Full body shot, white studio background, soft cinematic lighting, realistic.</div>
+              <button class="btn-copy" onclick="copyText(`The character from image 1 wearing this outfit from image 2.\nFull body shot, white studio background, soft cinematic lighting, realistic.`,this)">COPIAR</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--gold-dim);margin-bottom:8px;">CHARACTER REFERENCE SHEET COMPLETO</div>
+            <div class="static-box" style="position:relative;">
+              <div class="out-text" style="font-size:11px;">Create a professional character reference sheet based strictly on the uploaded reference image. Use a clean, neutral plain background. Arrange into two rows: Top row: four full-body standing views (front, left profile, right profile, back). Bottom row: three close-up portraits. Perfect identity consistency across every panel, relaxed A-pose, consistent lighting. Output crisp, ultra-realistic, print-ready reference sheet.</div>
+              <button class="btn-copy" onclick="copyText(`Create a professional character reference sheet based strictly on the uploaded reference image. Use a clean, neutral plain background and present the sheet as a technical model turnaround while matching the exact realistic visual style of the reference. Arrange the composition into two horizontal rows. Top row: four full-body standing views – front, left profile, right profile, back. Bottom row: three close-up portraits – front, left profile, right profile. Maintain perfect identity consistency across every panel. Keep the subject in a relaxed A-pose with consistent scale and alignment, accurate anatomy, and clear silhouette. Lighting should be consistent across all panels. Output a crisp, ultra-realistic, print-ready reference sheet.`,this)">COPIAR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECCIÓN 02 · LOCACIONES                    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="sec" id="sec-2">
+    <div class="sec-hdr">
+      <div class="sec-h1">02 — <em>LOCACIONES</em></div>
+      <div class="sec-sub">Genera locaciones clave · Crea reference sheets · Referencia en cada escena con @NombreLocacion</div>
+    </div>
+    <div class="tip">
+      <strong>Flujo oficial Higgsfield:</strong> Genera la locación → crea el Location Reference Sheet en Nano Banana Pro → usa ambas imágenes al generar cada escena. Para mundos post-apocalípticos incluye paleta HEX para consistencia total entre shots.
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">LOCACIÓN BASE</div>
+        <div class="card-sub">Usa en Higgsfield Cinema Studio</div>
+        <div class="form-grid">
+          <div class="fg span2"><label>Tipo de espacio</label>
+            <select id="l-type">
+              <option>Gatsby-style mansion lobby with grand twin staircases</option>
+              <option>Police locker room with blue lockers</option>
+              <option>Police cruiser interior — dashcam POV</option>
+              <option>Dark interior hallway — glowing door edges</option>
+              <option>Luxury bathroom — marble walls, sculptural sink</option>
+              <option>Abandoned post-apocalyptic urban plaza</option>
+              <option>Futuristic city at dusk — towers + neon</option>
+              <option>Storm-soaked industrial ruin</option>
+              <option>Bus interior with passengers</option>
+              <option>Concrete overpass at dusk — river channel below</option>
+              <option>Ancient forest at dawn with rising mist</option>
+              <option>MMA octagon cage — arena lighting</option>
+              <option>Custom (describir en detalles)</option>
+            </select>
+          </div>
+          <div class="fg"><label>Atmósfera</label>
+            <select id="l-mood">
+              <option>Elegant & luxurious — warm gold tones</option>
+              <option>Dark & ominous — teal shadows</option>
+              <option>Tense & claustrophobic</option>
+              <option>Epic & vast — sense of scale</option>
+              <option>Abandoned & melancholic — remnants of life</option>
+              <option>Industrial & raw</option>
+              <option>Mystical & atmospheric</option>
+              <option>Comedic suburban normalcy</option>
+            </select>
+          </div>
+          <div class="fg"><label>Iluminación</label>
+            <select id="l-light">
+              <option>Night interior — warm practical lights</option>
+              <option>Pre-dawn — blue cold transitioning to first gold</option>
+              <option>Midday — harsh direct sunlight</option>
+              <option>Golden hour — warm haze, long shadows</option>
+              <option>DVR/security camera flat look</option>
+              <option>Overcast storm — grey flat light</option>
+              <option>Neon-lit urban night</option>
+              <option>Arena spotlights — harsh overhead</option>
+            </select>
+          </div>
+          <div class="fg span2"><label>Detalles adicionales</label>
+            <textarea id="l-det" placeholder="ej: round cocktail tables scattered across room, elegantly dressed guests in business suits, marble floor with golden reflections..."></textarea>
+          </div>
+        </div>
+        <button class="btn-outline" onclick="genLoc()">📋 Generar Prompt de Locación</button>
+        <div id="loc-out" style="margin-top:13px;display:none;position:relative;">
+          <div class="static-box"><div class="out-text" id="loc-txt"></div><button class="btn-copy" onclick="copyEl('loc-txt',this)">COPIAR</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">LOCATION REF SHEET</div>
+        <div class="card-sub">Sube imagen de locación → Usa en Nano Banana Pro</div>
+        <div class="static-box" style="position:relative;">
+          <div class="out-text" style="font-size:11.5px;">Create a professional location reference sheet based strictly on the uploaded reference image. Match the exact realistic visual style, lighting quality, color treatment, and texture of the reference. Arrange into two horizontal rows. Top row: straight-on frontal view, left angled perspective, right angled perspective, reverse wide view. Bottom row: three detailed close-ups of key environmental elements. Maintain architectural consistency, accurate proportions, and consistent lighting. Output a crisp, ultra-realistic, print-ready location sheet.</div>
+          <button class="btn-copy" onclick="copyText(`Create a professional location reference sheet based strictly on the uploaded reference image. Match the exact realistic visual style, lighting quality, color treatment, and texture of the reference. Arrange into two horizontal rows. Top row: straight-on frontal view, left angled perspective, right angled perspective, reverse wide view. Bottom row: three detailed close-ups of key environmental elements. Maintain architectural consistency, accurate proportions, and consistent lighting across all panels. Output a crisp, ultra-realistic, print-ready location sheet.`,this)">COPIAR</button>
+        </div>
+        <div class="sep"></div>
+        <div style="font-size:12.5px;color:#888;line-height:2;">
+          🚔 <strong style="color:var(--text)">Police car:</strong> añade "DVR/security camera aesthetic, cheap wide-angle lens distortion"<br>
+          🌆 <strong style="color:var(--text)">Post-apoc:</strong> incluye paleta HEX de colores para consistencia entre shots<br>
+          🌫️ <strong style="color:var(--text)">Night scenes:</strong> usa "volumetric haze + warm practical lights"<br>
+          💎 <strong style="color:var(--text)">Luxury:</strong> "teal shadows + golden light, slight deep green in dark areas"<br>
+          🎬 <strong style="color:var(--text)">Cinemático:</strong> "ARRI Alexa Mini LF, anamorphic primes, subtle lens breathing"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECCIÓN 03 · VIDEO PROMPTS                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="sec" id="sec-3">
+    <div class="sec-hdr">
+      <div class="sec-h1">03 — <em>VIDEO PROMPTS</em></div>
+      <div class="sec-sub">Selecciona formato · Completa los campos · La IA genera el prompt listo para Higgsfield Seedance 2.0</div>
+    </div>
+
+    <!-- FORMAT SELECTOR -->
+    <div class="g3" style="margin-bottom:24px;">
+      <div class="fmt-card on" id="fmt-0" onclick="selFmt(0)">
+        <div class="fmt-icon">🔄</div>
+        <span class="fmt-tag viral">MÁS VIRAL</span>
+        <div class="fmt-name">Transformación</div>
+        <div class="fmt-desc">Personaje se convierte en monstruo, robot o guerrero. 6 shots, 15s. Formato #1 en redes.</div>
+      </div>
+      <div class="fmt-card" id="fmt-1" onclick="selFmt(1)">
+        <div class="fmt-icon">👁️</div>
+        <span class="fmt-tag trend">TRENDING</span>
+        <div class="fmt-name">Orb / POV Power</div>
+        <div class="fmt-desc">Cámara = tus ojos. Superpoder en 1ra persona. Shot continuo ultra-caótico. 15s.</div>
+      </div>
+      <div class="fmt-card" id="fmt-2" onclick="selFmt(2)">
+        <div class="fmt-icon">🎬</div>
+        <span class="fmt-tag adv">NARRATIVO</span>
+        <div class="fmt-name">Cortometraje</div>
+        <div class="fmt-desc">Escenas con personajes, diálogos y arco dramático. Multi-shot cinematográfico.</div>
+      </div>
+      <div class="fmt-card" id="fmt-3" onclick="selFmt(3)">
+        <div class="fmt-icon">💎</div>
+        <span class="fmt-tag adv">COMERCIAL</span>
+        <div class="fmt-name">Comercial de Marca</div>
+        <div class="fmt-desc">Publicidad premium tipo perfume, moda o spy film. Estética luxury o de acción.</div>
+      </div>
+      <div class="fmt-card" id="fmt-4" onclick="selFmt(4)">
+        <div class="fmt-icon">🎨</div>
+        <span class="fmt-tag anim">ANIMACIÓN</span>
+        <div class="fmt-name">Animación</div>
+        <div class="fmt-desc">Anime, Moebius, claymation, Pixar, watercolor. Cualquier estilo 2D/3D animado.</div>
+      </div>
+      <div class="fmt-card" id="fmt-5" onclick="selFmt(5)">
+        <div class="fmt-icon">✍️</div>
+        <span class="fmt-tag viral">LIBRE</span>
+        <div class="fmt-name">Escena Libre</div>
+        <div class="fmt-desc">Describe tu idea en español o inglés. La IA elige el mejor formato y estructura.</div>
+      </div>
+    </div>
+
+    <!-- ── PANEL: TRANSFORMACIÓN ── -->
+    <div class="form-panel on card" id="fp-0">
+      <div class="card-title">TRANSFORMACIÓN</div>
+      <div class="card-sub">Arc: calma → amenaza → transformación → aftermath · 6 shots · 15 segundos</div>
+      <div class="form-grid">
+        <div class="fg"><label>Personaje — descripción visual</label>
+          <input type="text" id="t-char" placeholder="ej: pink-haired girl with glasses, cream top and jeans...">
+        </div>
+        <div class="fg"><label>Locación</label>
+          <input type="text" id="t-loc" placeholder="ej: concrete overpass at dusk, dry river channel below...">
+        </div>
+        <div class="fg"><label>Estado inicial (¿qué hace?)</label>
+          <input type="text" id="t-init" placeholder="ej: sitting on hood of white pickup truck eating a burger...">
+        </div>
+        <div class="fg"><label>Amenaza (¿qué aparece?)</label>
+          <input type="text" id="t-thr" placeholder="ej: pale zombie with wet dark hair sprints from shadows...">
+        </div>
+        <div class="fg"><label>Tipo de transformación</label>
+          <select id="t-type">
+            <option>Massive pale tusked creature with elongated clawed limbs</option>
+            <option>Green-armored robo-girl with energy cannon arm</option>
+            <option>Giant glowing warrior with ancient armor</option>
+            <option>Dark winged demon with razor claws</option>
+            <option>Colossal fire elemental — body becomes flame</option>
+            <option>Ice giant with crystalline shard body</option>
+            <option>Stone golem — body becomes rock and earth</option>
+            <option>Custom (especificar en detalles)</option>
+          </select>
+        </div>
+        <div class="fg"><label>Mood / Tono</label>
+          <select id="t-mood">
+            <option>Dark comedy with horror undertones</option>
+            <option>Pure action horror — no comedy</option>
+            <option>Epic superhero — triumphant</option>
+            <option>Comedic chaos — visual gags</option>
+            <option>Thriller dramatic — tense escalation</option>
+          </select>
+        </div>
+        <div class="fg"><label>Acción post-transformación / detalles extra</label>
+          <textarea id="t-extra" placeholder="ej: devours the zombie whole, shrinks back to human, picks up burger and keeps eating. Handheld shake throughout..."></textarea>
+        </div>
+        <div class="fg"><label>Ratio</label>
+          <select id="t-rat"><option>16:9</option><option>9:16</option><option>1:1</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PANEL: ORB/POV ── -->
+    <div class="form-panel card" id="fp-1">
+      <div class="card-title">ORB / POV POWER</div>
+      <div class="card-sub">Shot continuo · Primera persona · Cámara = tus ojos · 15 segundos</div>
+      <div class="form-grid">
+        <div class="fg"><label>Tipo de poder</label>
+          <select id="p-pwr">
+            <option>Lightning / Electric</option>
+            <option>Fire / Pyrokenesis</option>
+            <option>Ice / Cryokenesis</option>
+            <option>Gravity / Telekinesis</option>
+            <option>Shadow / Darkness</option>
+            <option>Magnetic powers</option>
+            <option>Energy blasts — general</option>
+            <option>Custom</option>
+          </select>
+        </div>
+        <div class="fg"><label>VFX visual del poder (inline)</label>
+          <input type="text" id="p-vfx" placeholder="ej: branching electric circuits pulsing white-blue, sparks between fingers...">
+        </div>
+        <div class="fg"><label>Entorno / Ambiente</label>
+          <input type="text" id="p-env" placeholder="ej: storm-soaked industrial ruin, broken metal beams, electricity arcing between surfaces...">
+        </div>
+        <div class="fg"><label>Tipo de enemigos</label>
+          <input type="text" id="p-en" placeholder="ej: dozens of jagged obsidian creatures with glowing red cores crawling across walls and ground...">
+        </div>
+        <div class="fg span2"><label>Boss / Clímax final</label>
+          <input type="text" id="p-boss" placeholder="ej: colossal iron titan rising behind enemy horde, chest is rotating electromagnetic core crackling with energy...">
+        </div>
+        <div class="fg"><label>Género del personaje</label>
+          <select id="p-gen"><option>Femenino (her eyes)</option><option>Masculino (his eyes)</option></select>
+        </div>
+        <div class="fg"><label>Ratio</label>
+          <select id="p-rat"><option>16:9</option><option>9:16</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PANEL: CORTOMETRAJE ── -->
+    <div class="form-panel card" id="fp-2">
+      <div class="card-title">CORTOMETRAJE / SHORT FILM</div>
+      <div class="card-sub">Multi-shot cinematográfico · Referencia personajes con @Nombre · Diálogos entre comillas</div>
+      <div class="form-grid">
+        <div class="fg"><label>Personaje principal (@Nombre)</label>
+          <input type="text" id="sf-c1" placeholder='ej: @Adil — American policeman, late 30s, tired eyes, stoic...'>
+        </div>
+        <div class="fg"><label>Personaje secundario (@Nombre)</label>
+          <input type="text" id="sf-c2" placeholder='ej: @Dave — Partner cop, humorous, friendly energy...'>
+        </div>
+        <div class="fg"><label>Locación (@NombreLocación)</label>
+          <input type="text" id="sf-loc" placeholder='ej: @Locker-Room — police locker room, blue lockers, benches...'>
+        </div>
+        <div class="fg"><label>Estilo de cámara</label>
+          <select id="sf-cam">
+            <option>Handheld — intimate and raw</option>
+            <option>Static — composed, controlled</option>
+            <option>Mixed handheld + static</option>
+            <option>Surveillance / dashcam POV</option>
+          </select>
+        </div>
+        <div class="fg span2"><label>Descripción de la escena + diálogos</label>
+          <textarea id="sf-sc" style="min-height:110px;" placeholder='ej: Adil enters the locker room with blue lockers, stops in front of his locker with his back to camera. Dave appears: "Happy birthday, my little princess!" Adil shuts the locker: "It\'s just a regular day, man." Dave keeps teasing...'></textarea>
+        </div>
+        <div class="fg"><label>Duración (segundos)</label>
+          <input type="text" id="sf-dur" value="15" placeholder="15">
+        </div>
+        <div class="fg"><label>Ratio</label>
+          <select id="sf-rat"><option>16:9</option><option>9:16</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PANEL: COMERCIAL ── -->
+    <div class="form-panel card" id="fp-3">
+      <div class="card-title">COMERCIAL DE MARCA</div>
+      <div class="card-sub">Publicidad cinematográfica premium · Estética luxury, spy film o fashion</div>
+      <div class="form-grid">
+        <div class="fg"><label>Marca / Producto</label>
+          <input type="text" id="ad-br" placeholder="ej: perfume de lujo, reloj, skincare, moda...">
+        </div>
+        <div class="fg"><label>Estilo visual</label>
+          <select id="ad-sty">
+            <option>Luxury advertising — warm aspirational tones</option>
+            <option>Spy / action thriller — sleek and tense</option>
+            <option>Romance / emotional — soft golden light</option>
+            <option>Fashion editorial — cool, composed</option>
+            <option>Sport / dynamic — high energy</option>
+          </select>
+        </div>
+        <div class="fg"><label>Personaje principal</label>
+          <input type="text" id="ad-ch" placeholder="ej: Orlando Salazar — Latino male, athletic build, 30s, black tuxedo...">
+        </div>
+        <div class="fg"><label>Locación</label>
+          <input type="text" id="ad-lo" placeholder="ej: Gatsby-style mansion lobby, grand twin staircases, marble floor...">
+        </div>
+        <div class="fg span2"><label>Descripción de la escena clave</label>
+          <textarea id="ad-sc" placeholder="ej: Couple holding champagne flutes in close flirtatious conversation at a cocktail table, formally dressed guests in background. Shallow depth of field, background softly blurred..."></textarea>
+        </div>
+        <div class="fg"><label>Duración (segundos)</label>
+          <input type="text" id="ad-dur" value="15">
+        </div>
+        <div class="fg"><label>Ratio</label>
+          <select id="ad-rat"><option>16:9</option><option>9:16</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PANEL: ANIMACIÓN ── -->
+    <div class="form-panel card" id="fp-4">
+      <div class="card-title">ANIMACIÓN</div>
+      <div class="card-sub">Sube <<<image_1>>> como referencia del personaje Y del estilo visual</div>
+      <div class="form-grid">
+        <div class="fg"><label>Estilo de animación</label>
+          <select id="an-sty">
+            <option>Anime / Paper Cutout — bold cel-shading, thick outlines, speed lines</option>
+            <option>2D French Graphic Novel / Moebius — clean linework, flat muted colors</option>
+            <option>Claymation — textured clay, organic imperfect movement</option>
+            <option>3D Pixar-style — polished, expressive, warm</option>
+            <option>Watercolor painted — soft edges, flowing color bleeds</option>
+            <option>80s Retro Animation — bold colors, limited frames, flat shading</option>
+            <option>Comic Book / Dynamic — high contrast, dramatic angles</option>
+            <option>Storybook / Fairy tale — soft illustrated, dreamy</option>
+          </select>
+        </div>
+        <div class="fg"><label>Personaje</label>
+          <input type="text" id="an-ch" placeholder="ej: young man, short dark brown hair, slight build, casual suit...">
+        </div>
+        <div class="fg span2"><label>Historia / Escena (con momentos clave)</label>
+          <textarea id="an-st" style="min-height:100px;" placeholder="ej: man wakes up late in a cozy anime bedroom, panics, rushes to get ready with anime speed lines, checks his smartwatch and sees a holographic ULTRAFAST route button, taps it with hesitation, gets instantly teleported in a blinding flash of geometric energy..."></textarea>
+        </div>
+        <div class="fg"><label>Duración (segundos)</label>
+          <input type="text" id="an-dur" value="15">
+        </div>
+        <div class="fg"><label>Ratio</label>
+          <select id="an-rat"><option>16:9</option><option>9:16</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PANEL: LIBRE ── -->
+    <div class="form-panel card" id="fp-5">
+      <div class="card-title">ESCENA LIBRE</div>
+      <div class="card-sub">Describe tu idea en español o inglés · La IA elige el mejor formato y estructura cinematográfica</div>
+      <div class="fg" style="margin-bottom:0;">
+        <label>Tu escena (sé específico: personaje, locación, acción, duración, ratio)</label>
+        <textarea id="free" style="min-height:130px;" placeholder="ej: Una mujer samurai con kimono negro camina por Neo Tokyo en la lluvia. Se enfrenta a 3 drones enemigos que la atacan. Los destruye con su katana que emite luz azul. Slow motion en el momento del impacto. 15 segundos, 9:16 para TikTok. Estética cinemática realista..."></textarea>
+      </div>
+    </div>
+
+    <!-- GENERATE BUTTON -->
+    <button class="btn-gold" id="genBtn" onclick="doGenerate()">⚡ GENERAR PROMPT CON IA</button>
+
+    <!-- OUTPUT AREA -->
+    <div class="out-wrap" id="outWrap">
+      <div class="out-tabs">
+        <button class="out-tab on" id="otab-en" onclick="selOut('en')">🇺🇸 English Prompt</button>
+        <button class="out-tab" id="otab-zh" onclick="selOut('zh')">🇨🇳 中文 Prompt</button>
+        <span class="out-badge" id="charCount"></span>
+      </div>
+      <div class="out-box">
+        <div class="loading" id="loadEl">
+          <div class="loading-inner">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          </div>
+          <div class="loading-msg">Generando prompt cinematográfico para Seedance 2.0...</div>
+        </div>
+        <div class="out-pane on" id="pane-en" style="position:relative;">
+          <pre class="out-text" id="out-en"></pre>
+          <button class="btn-copy" onclick="copyEl('out-en',this)">COPIAR</button>
+        </div>
+        <div class="out-pane" id="pane-zh" style="position:relative;">
+          <pre class="out-text" id="out-zh"></pre>
+          <button class="btn-copy" onclick="copyEl('out-zh',this)">COPIAR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SECCIÓN 04 · BIBLIOTECA                    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="sec" id="sec-4">
+    <div class="sec-hdr">
+      <div class="sec-h1">04 — <em>BIBLIOTECA</em></div>
+      <div class="sec-sub">Snippets listos para copiar y pegar en cualquier prompt de Higgsfield.</div>
+    </div>
+    <div class="g3">
+      <div class="snip">
+        <div class="snip-lbl">🎬 CINEMATIC HEADER — BASE</div>
+        <div class="snip-txt">Montage, multi-shot action Hollywood movie, don't use one camera angle or single cut, cinematic lighting, photorealistic, 35mm film quality, professional color grading, sharp focus, high detail texture, film grain, depth of field mastery, ARRI ALEXA aesthetic</div>
+        <button class="btn-sm" onclick="copyText(`Montage, multi-shot action Hollywood movie, don't use one camera angle or single cut, cinematic lighting, photorealistic, 35mm film quality, professional color grading, sharp focus, high detail texture, film grain, depth of field mastery, ARRI ALEXA aesthetic`,this)">📋 Copiar</button>
+      </div>
+      <div class="snip">
+        <div class="snip-lbl">👁️ ORB HEADER — POV SHOT</div>
+        <div class="snip-txt">Single continuous shot, first-person POV perspective, the camera IS her eyes, hyper-chaotic handheld motion, completely unstabilized, violent raw human movement, constant micro-jitters, aggressive head swings, abrupt jerks, wide-angle lens strong distortion, 15 seconds, hands always visible in frame</div>
+        <button class="btn-sm" onclick="copyText(`Single continuous shot, first-person POV perspective, the camera IS her eyes, hyper-chaotic handheld motion, completely unstabilized, violent raw human movement, constant micro-jitters, aggressive head swings, abrupt jerks, wide-angle lens (strong distortion), subtle chromatic aberration near frame edges, 15 seconds, her hands always visible in frame, no music only raw SFX`,this)">📋 Copiar</button>
+      </div>
+      <div class="snip">
+        <div class="snip-lbl">💎 LUXURY COMMERCIAL LOOK</div>
+        <div class="snip-txt">Shallow depth of field — background softly blurred. Lighting soft and diffused — no harsh shadows, highlights not blown out, shadows lifted and airy. Color graded in warm color with slight deep green in dark areas. Luxury advertising aesthetic — polished, warm tones, aspirational mood.</div>
+        <button class="btn-sm" onclick="copyText(`Shallow depth of field — background softly blurred, foreground figures sharp. Lighting is soft and diffused — no harsh shadows, no strong contrast, gentle even illumination across the scene, highlights are not blown out, shadows are lifted and airy. Warm interior light. Color graded in warm color, with slight deep green color in the dark areas. Luxury advertising aesthetic — polished, warm tones, aspirational mood.`,this)">📋 Copiar</button>
+      </div>
+      <div class="snip">
+        <div class="snip-lbl">🦾 ULTRA REALISM — ANTI CGI</div>
+        <div class="snip-txt">no 3D, no cartoon, no VFX. Strong 35mm film look, heavy film grain, sharp but imperfect focus, noticeable focus breathing, motion blur on fast actions, halation on highlights, soft highlight rolloff, slightly desaturated tones, practical VFX feel, minimal CGI look, natural imperfections</div>
+        <button class="btn-sm" onclick="copyText(`no 3D, no cartoon, no VFX. Strong 35mm film look, heavy film grain, sharp but imperfect focus, noticeable focus breathing, motion blur on fast actions, halation on highlights, soft highlight rolloff, slightly desaturated tones, ARRI ALEXA aesthetic, practical VFX feel, minimal CGI look, natural imperfections`,this)">📋 Copiar</button>
+      </div>
+      <div class="snip">
+        <div class="snip-lbl">📹 DVR / DASHCAM LOOK</div>
+        <div class="snip-txt">DVR/security camera aesthetic, cheap wide-angle lens distortion, mild compression artifacts, low dynamic range, subtle digital noise, slightly blown highlights, surveillance style framing, raw ungraded footage, flat digital sensor look, slightly washed-out colors</div>
+        <button class="btn-sm" onclick="copyText(`DVR/security camera aesthetic, cheap wide-angle lens distortion, mild compression artifacts, low dynamic range, subtle digital noise, slightly blown highlights, surveillance style framing, raw ungraded footage, flat digital sensor look, slightly washed-out colors`,this)">📋 Copiar</button>
+      </div>
+      <div class="snip">
+        <div class="snip-lbl">⚡ VFX INLINE TEMPLATES</div>
+        <div class="snip-txt">[VFX: branching electric circuits pulsing with white-blue current]
+[VFX: green energy ribbons spiral up body, armor plates snapping onto limbs]
+[VFX: orange-red fire tendrils coil up both forearms, heat haze]</div>
+        <button class="btn-sm" onclick="copyText(`[VFX: branching electric circuits pulsing with white-blue current, sparks jumping between fingers]\n[VFX: green energy ribbons spiral upward, armor plates snapping onto limbs piece by piece, visor locking over eyes]\n[VFX: orange-red fire tendrils coil up both forearms, heat distortion around hands]`,this)">📋 Copiar</button>
+      </div>
+      <div class="snip">
+        <div class="snip-lbl">🎨 ANIME STYLE HEADER</div>
+        <div class="snip-txt">Bold 2D anime illustration, cel-shaded flat coloring, thick confident outlines, warm amber and muted earth tones with cool electric blue holographic accents, anime speed lines and impact frames, 24fps. Maintain consistent 2D anime illustration style throughout ALL frames.</div>
+        <button class="btn-sm" onclick="copyText(`Bold 2D anime illustration, cel-shaded flat coloring, thick confident outlines, warm amber and muted earth tones with cool electric blue holographic accents, anime speed lines and impact frames, 2.35:1 widescreen, 24fps. Maintain consistent 2D anime illustration style throughout all frames.`,this)">📋 Copiar</button>
+      </div>
+      <div class="snip">
+        <div class="snip-lbl">🎥 CAMERA COMBOS — DOBLE CONTRASTE</div>
+        <div class="snip-txt">Chaotic handheld medium → Hard cut to low-angle close-up
+Wide stabilized tracking → Smash cut to extreme close-up handheld
+Static locked wide → Crane descend → Match cut aerial drone</div>
+        <button class="btn-sm" onclick="copyText(`Chaotic handheld medium shot → Hard cut to low-angle close-up: camera shuddering on impact → Wide stabilized tracking shot\nStatic locked-off wide → Smash cut to extreme close-up handheld → Cut to crane descending\nPOV handheld → Match cut to aerial drone → Cut to static OTS medium`,this)">📋 Copiar</button>
+      </div>
+      <div class="snip">
+        <div class="snip-lbl">🌅 ATMOSPHERE — FOREST DAWN</div>
+        <div class="snip-txt">Pre-dawn blue light filtering through ancient canopy, volumetric mist rising from forest floor, pale gold rays breaking through gaps in treeline. Desaturated cool tones warming gradually. Dew on every surface. Spider webs between lower branches.</div>
+        <button class="btn-sm" onclick="copyText(`Pre-dawn blue light filtering through ancient canopy, volumetric mist rising from forest floor, pale gold rays breaking through gaps in the treeline. Desaturated cool tones warming gradually. Dew on every surface. Spider webs between lower branches.`,this)">📋 Copiar</button>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div style="font-family:var(--fh);font-size:20px;letter-spacing:2px;margin-bottom:16px;">REGLAS CLAVE DE <em style="color:var(--gold)">SEEDANCE 2.0</em></div>
+    <div class="rule-row">
+      <div class="rule-item">
+        ✅ Siempre especifica <strong>shots + duración + ratio</strong> al inicio del prompt<br>
+        ✅ Doble contraste en cada corte: cambia <strong>tamaño Y tipo de cámara</strong><br>
+        ✅ VFX inline entre corchetes: <strong>[VFX: descripción visual]</strong><br>
+        ✅ Re-anclar posiciones y direcciones <strong>después de cada corte</strong><br>
+        ✅ Máximo <strong>3 personajes</strong> rastreados entre shots<br>
+        ✅ Para monstruos: añade <strong>"no 3D, no cartoon, no VFX"</strong><br>
+        ✅ Para comedias: añade <strong>"add a visual gag in the background"</strong>
+      </div>
+      <div class="rule-item">
+        ❌ NUNCA describir <strong style="color:var(--red)">biomecánica de articulaciones</strong> (solo intención)<br>
+        ❌ NUNCA exit-frame + re-entrada <strong style="color:var(--red)">en el mismo shot continuo</strong><br>
+        ❌ NUNCA shots de reflejo: <strong style="color:var(--red)">espejos, charcos, hojas</strong> — Seedance falla<br>
+        ❌ NUNCA describir lo que <strong style="color:var(--red)">no puede verse</strong> (olores, pensamientos)<br>
+        ❌ NUNCA más de <strong style="color:var(--red)">25-30 palabras habladas</strong> en 15 segundos<br>
+        ❌ NUNCA usar: <strong style="color:var(--red)">breathtaking, stunning, seamlessly, cinematic masterpiece</strong><br>
+        ❌ NUNCA describir <strong style="color:var(--red)">emociones</strong> — usa física: "jaw clenches, nostrils flare"
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+// ═══ STATE ═══
+let curSec=0, curFmt=0, curOutTab='en', curGenre=0, curMood=0;
+let apiKey=localStorage.getItem('hf_api_key')||'';
+
+// ═══ SYSTEM PROMPT — VIDEO PROMPTS ═══
+const SYS=`You are a Higgsfield AI / Seedance 2.0 expert video prompt engineer. You generate production-ready video prompts for the Seedance 2.0 video generator.
+
+CORE ENGINE RULES (Seedance 2.0):
+- Always specify shot structure upfront: number of shots, total duration, aspect ratio
+- Action beats = intent + named technique, NOT joint biomechanics
+- Every cut requires DOUBLE CONTRAST: change BOTH shot size AND camera character simultaneously
+- Re-anchor character positions and facing direction after every cut
+- Maximum 3 characters tracked across cuts
+- Exit-frame = implicit cut. Never choreograph exit + re-entry in same continuous shot
+- Describe only what can be SEEN or HEARD
+- Micro-expressions as physics: "jaw clenches, nostrils flare" NOT "looks angry"
+- Default: in medias res
+- Antislop — never use: breathtaking, stunning, cinematic masterpiece, seamlessly, effortlessly
+
+CINEMATIC BASE STYLE: "Montage, multi-shot action Hollywood movie, don't use one camera angle or single cut, cinematic lighting, photorealistic, 35mm film quality, professional color grading, sharp focus, high detail texture, film grain, depth of field mastery, ARRI ALEXA aesthetic"
+
+TRANSFORMATION: Arc calm→threat→transformation→aftermath. 6 shots, 15s. End: "Total: 15s / 6 shots / ratio"
+ORB/POV: "Single continuous shot, first-person POV perspective, the camera IS her/his eyes, hyper-chaotic handheld motion, completely unstabilized, wide-angle lens, 15 seconds, hands always visible in frame." VFX inline: [VFX: description]. RAMPS TO SLOW MOTION at climax.
+SHORT FILM: Characters as @Name, dialogue in quotes.
+COMMERCIAL: Luxury look — shallow DOF, highlights not blown out, warm tones, aspirational mood.
+ANIMATION: Declare style first, include <<<image_1>>> as reference, maintain style in ALL frames.
+
+OUTPUT: Return ONLY a JSON object {"en":"...","zh":"..."} — no markdown, no explanation.`;
+
+// ═══ SYSTEM PROMPT — IDEAS GENERATOR ═══
+const SYS_IDEAS=`You are a creative Higgsfield AI / Seedance 2.0 video concept director. You invent original, viral, production-ready video ideas.
+
+For each idea you generate:
+- An original character with specific visual description (hair, clothing, face details)
+- A specific interesting location
+- A compelling action/story arc
+- The complete Seedance 2.0 video prompt in English — ready to copy-paste directly
+- A Chinese version of the prompt (native rewrite ≤ 1800 chars)
+
+Seedance 2.0 prompt rules you must follow:
+- Start with shot count, duration, aspect ratio
+- Use "Montage, multi-shot action Hollywood movie, don't use one camera angle or single cut, cinematic lighting, photorealistic, 35mm film quality, professional color grading, sharp focus, high detail texture, film grain, depth of field mastery, ARRI ALEXA aesthetic" for realistic formats
+- For Transformation format: Shot 1: ... Shot 2: ... up to Shot 6. End with "Total: 15s / 6 shots / ratio"
+- For Orb/POV: "Single continuous shot, first-person POV perspective, the camera IS her eyes, hyper-chaotic handheld motion, completely unstabilized, violent raw human movement, constant micro-jitters, wide-angle lens (strong distortion), 15 seconds, hands always visible"
+- For Animation: declare style first, include <<<image_1>>> as reference
+- Double contrast on every cut (change both shot size AND camera type)
+- VFX inline in [brackets]
+- Never use: breathtaking, stunning, cinematic masterpiece, seamlessly
+
+OUTPUT FORMAT — return ONLY a JSON array of exactly 3 objects. No markdown. No explanation. Just the array:
+[
+  {
+    "title": "Título llamativo del video",
+    "concept": "Descripción de la idea en 2-3 líneas. Qué pasa, quién es el personaje, por qué es interesante.",
+    "format": "Transformación | Orb/POV | Cortometraje | Comercial | Animación",
+    "en": "Complete English Seedance 2.0 prompt — production ready, full detail",
+    "zh": "Native Chinese cinematographer rewrite ≤1800 chars"
+  },
+  { ... },
+  { ... }
+]`;
+
+// ═══ GENRE + MOOD DATA ═══
+const GENRES=['Viral / TikTok — formato máximamente compartible en redes sociales, gancho visual fuerte en los primeros 2 segundos',
+  'Acción cinematográfica — secuencias de combate o persecución al estilo Hollywood',
+  'Terror / Horror — atmósfera oscura, suspenso, transformaciones aterradoras',
+  'Comedia dark — situaciones absurdas con humor negro y timing perfecto',
+  'Ciencia ficción — futurismo, tecnología, mundos alternativos',
+  'Animación — personajes animados en estilos únicos como anime, Moebius o claymation',
+  'K-Pop / Music Video — coreografía, idol culture, estética vibrante y colorida',
+  'Comercial de marca — publicidad premium estilo luxury o spy film',
+  'Fantasía épica — mundos mágicos, guerreros, criaturas sobrenaturales',
+  'Drama emocional — historia humana, conflicto interno, momentos íntimos'];
+
+const MOODS=['Oscuro y ominoso — shadows, teal tones, sense of dread',
+  'Épico y grandioso — massive scale, triumphant energy, bombastic',
+  'Cómico y absurdo — dark comedy pacing, visual gags, timing',
+  'Emotivo y melancólico — intimate, melancholic, human connection',
+  'Misterioso y surrealista — dreamlike, uncertain, atmospheric',
+  'Colorido y vibrante — saturated, kinetic, high energy',
+  'Violento e intenso — raw aggression, handheld chaos, impact',
+  'Luxury y aspiracional — polished, warm gold tones, aspirational'];
+
+// ═══ NAVIGATION ═══
+function goSec(n){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.pipe-step').forEach(p=>p.classList.remove('on'));
+  document.getElementById('sec-'+n).classList.add('on');
+  document.getElementById('pipe-'+n).classList.add('on');
+  curSec=n;
+}
+
+// ═══ GENRE / MOOD SELECTORS ═══
+function selGenre(n){
+  document.querySelectorAll('.genre-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('genre-'+n).classList.add('on');
+  curGenre=n;
+}
+function selMood(n){
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('mood-'+n).classList.add('on');
+  curMood=n;
+}
+
+// ═══ FORMAT SELECT ═══
+function selFmt(n){
+  document.querySelectorAll('.fmt-card').forEach(c=>c.classList.remove('on'));
+  document.querySelectorAll('.form-panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('fmt-'+n).classList.add('on');
+  document.getElementById('fp-'+n).classList.add('on');
+  curFmt=n;
+  document.getElementById('outWrap').classList.remove('on');
+}
+
+// ═══ OUTPUT TABS ═══
+function selOut(lang){
+  curOutTab=lang;
+  ['en','zh'].forEach(l=>{
+    document.getElementById('otab-'+l).classList.toggle('on',l===lang);
+    document.getElementById('pane-'+l).classList.toggle('on',l===lang);
+  });
+}
+
+// ═══ IDEA OUTPUT TABS ═══
+function selIdeaTab(cardIdx,lang){
+  const card=document.getElementById('idea-card-'+cardIdx);
+  card.querySelectorAll('.idea-tab').forEach(t=>t.classList.remove('on'));
+  card.querySelectorAll('.idea-prompt-pane').forEach(p=>p.classList.remove('on'));
+  card.querySelector('.idea-tab[data-lang='+lang+']').classList.add('on');
+  card.querySelector('.idea-prompt-pane[data-lang='+lang+']').classList.add('on');
+}
+
+// ═══ API KEY ═══
+function openModal(){document.getElementById('apiModal').classList.add('on');}
+function closeModal(){document.getElementById('apiModal').classList.remove('on');}
+function saveKey(){
+  const k=document.getElementById('apiKeyInput').value.trim();
+  if(k){apiKey=k;localStorage.setItem('hf_api_key',k);updateApiBtn();closeModal();}
+}
+function updateApiBtn(){
+  const b=document.getElementById('apiBtnEl');
+  if(apiKey){b.textContent='✓ API Key activa';b.classList.add('ok');}
+  else{b.textContent='⚙ Configurar API Key';b.classList.remove('ok');}
+}
+
+// ═══ GENERATE IDEAS ═══
+async function doIdeas(){
+  if(!apiKey){openModal();return;}
+  const btn=document.getElementById('ideaBtn');
+  const loading=document.getElementById('ideas-loading');
+  const out=document.getElementById('ideas-out');
+  const regenRow=document.getElementById('idea-regen-row');
+
+  btn.disabled=true; btn.textContent='⏳ GENERANDO IDEAS...';
+  loading.style.display='block';
+  out.style.display='none';
+  regenRow.style.display='none';
+
+  const hint=document.getElementById('idea-hint').value.trim();
+  const userMsg=`Generate 3 completely original and distinct Seedance 2.0 video ideas for:
+Genre: ${GENRES[curGenre]}
+Mood/Energy: ${MOODS[curMood]}
+${hint?'Special element/hint: '+hint:''}
+
+Make the 3 ideas VERY different from each other — different formats, different characters, different settings. Each one should feel like a completely separate creative direction. Be specific and creative with character details (hair color, outfit, face details). Make the prompts complete and immediately usable — no placeholders.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        system:SYS_IDEAS,
+        messages:[{role:'user',content:userMsg}]
+      })
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error?.message||'API Error '+res.status);
+
+    const raw=data.content.map(b=>b.text||'').join('');
+    let ideas;
+    try{
+      const clean=raw.replace(/^```(?:json)?\n?/,'').replace(/\n?```$/,'').trim();
+      ideas=JSON.parse(clean);
+    }catch{
+      throw new Error('No se pudo parsear la respuesta. Intenta de nuevo.');
+    }
+
+    // Render idea cards
+    out.innerHTML='';
+    ideas.forEach((idea,i)=>{
+      const fmtColors={
+        'Transformación':'rgba(224,82,82,.15)',
+        'Orb/POV':'rgba(91,196,224,.15)',
+        'Cortometraje':'rgba(212,162,106,.15)',
+        'Comercial':'rgba(212,162,106,.15)',
+        'Animación':'rgba(167,139,250,.15)',
+      };
+      out.innerHTML+=`
+      <div class="idea-card" id="idea-card-${i}">
+        <div class="idea-card-top">
+          <div class="idea-meta">
+            <div class="idea-num">0${i+1}</div>
+            <span class="idea-format-tag">${idea.format||'Video'}</span>
+          </div>
+          <div class="idea-title">${idea.title||'Idea '+(i+1)}</div>
+          <div class="idea-concept">${idea.concept||''}</div>
+        </div>
+        <div class="idea-prompt-area">
+          <div class="idea-prompt-tabs">
+            <button class="idea-tab on" data-lang="en" onclick="selIdeaTab(${i},'en')">🇺🇸 EN</button>
+            <button class="idea-tab" data-lang="zh" onclick="selIdeaTab(${i},'zh')">🇨🇳 ZH</button>
+          </div>
+          <div class="idea-prompt-box">
+            <div class="idea-prompt-pane on" data-lang="en">
+              <pre id="idea-en-${i}">${escapeHtml(idea.en||'')}</pre>
+              <button class="btn-copy" onclick="copyEl('idea-en-${i}',this)">COPIAR</button>
+            </div>
+            <div class="idea-prompt-pane" data-lang="zh">
+              <pre id="idea-zh-${i}">${escapeHtml(idea.zh||'')}</pre>
+              <button class="btn-copy" onclick="copyEl('idea-zh-${i}',this)">COPIAR</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+
+    loading.style.display='none';
+    out.style.display='grid';
+    regenRow.style.display='flex';
+  }catch(err){
+    loading.style.display='none';
+    out.innerHTML=`<div class="card span2" style="grid-column:1/-1;color:var(--red);">❌ ${err.message}<br><br>Verifica tu API Key en console.anthropic.com</div>`;
+    out.style.display='grid';
+  }
+  btn.disabled=false; btn.textContent='🎲 GENERAR 3 IDEAS COMPLETAS';
+}
+
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ═══ GENERATE VIDEO PROMPT ═══
+async function doGenerate(){
+  if(!apiKey){openModal();return;}
+  const btn=document.getElementById('genBtn');
+  const wrap=document.getElementById('outWrap');
+  const load=document.getElementById('loadEl');
+  const pEn=document.getElementById('pane-en');
+  const pZh=document.getElementById('pane-zh');
+
+  btn.disabled=true; btn.textContent='⏳ GENERANDO...';
+  wrap.classList.add('on');
+  load.classList.add('on');
+  pEn.classList.remove('on'); pZh.classList.remove('on');
+  document.getElementById('charCount').textContent='';
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2000,
+        system:SYS,
+        messages:[{role:'user',content:buildPrompt()}]
+      })
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error?.message||`HTTP ${res.status}`);
+
+    const raw=data.content.map(b=>b.text||'').join('');
+    let parsed;
+    try{
+      const clean=raw.replace(/^```(?:json)?\n?/,'').replace(/\n?```$/,'').trim();
+      parsed=JSON.parse(clean);
+    }catch{
+      parsed={en:raw,zh:'(versión en chino no disponible)'};
+    }
+
+    document.getElementById('out-en').textContent=parsed.en||raw;
+    document.getElementById('out-zh').textContent=parsed.zh||'';
+    document.getElementById('charCount').textContent=`${(parsed.zh||'').length} / 1800 chars`;
+
+    load.classList.remove('on');
+    selOut('en');
+  }catch(err){
+    load.classList.remove('on');
+    document.getElementById('out-en').textContent='❌ Error: '+err.message+'\n\nVerifica tu API Key en console.anthropic.com';
+    pEn.classList.add('on');
+  }
+  btn.disabled=false; btn.textContent='⚡ GENERAR PROMPT CON IA';
+}
+
+// ═══ BUILD PROMPT FROM FORM ═══
+function buildPrompt(){
+  const f=curFmt;
+  if(f===0){
+    return`Create a TRANSFORMATION video prompt:\nCharacter: ${v('t-char')||'a mysterious woman in street clothes'}\nLocation: ${v('t-loc')||'urban rooftop at dusk'}\nStarting action: ${v('t-init')||'sitting quietly, looking at the horizon'}\nThreat: ${v('t-thr')||'a dark creature emerges from the shadows'}\nTransformation type: ${v('t-type')}\nMood: ${v('t-mood')}\nPost-transformation action: ${v('t-extra')||''}\nFormat: 6 shots, 15 seconds, ${v('t-rat')}\n\nArc: calm→threat→transformation→aftermath. Number each shot as "Shot N:". Add cinematic style header.`;
+  }
+  if(f===1){
+    const gen=v('p-gen').includes('Fem')?'her':'his';
+    return`Create an ORB/POV first-person power scene:\nPower: ${v('p-pwr')}\nVFX: ${v('p-vfx')||'crackling energy with electric-blue arcs across hands'}\nEnvironment: ${v('p-env')||'storm-damaged industrial complex'}\nEnemies: ${v('p-en')||'armored soldiers with glowing visors'}\nBoss/climax: ${v('p-boss')||'colossal mechanical titan'}\nPOV: ${gen} eyes\nFormat: Single continuous shot, 15 seconds, ${v('p-rat')}\n\nHyper-chaotic first-person POV. Hands always visible. VFX inline in [brackets]. RAMPS TO SLOW MOTION at climax then SNAPS BACK.`;
+  }
+  if(f===2){
+    return`Create a SHORT FILM scene:\nMain character: ${v('sf-c1')||'@Hero'}\nSecondary: ${v('sf-c2')||''}\nLocation: ${v('sf-loc')||'interior'}\nCamera: ${v('sf-cam')}\nScene/dialogue: ${v('sf-sc')||'Two characters meet.'}\nDuration: ${v('sf-dur')||'15'}s, ${v('sf-rat')}\n\nUse @Name syntax. Dialogue in quotes. Multi-shot handheld intimacy.`;
+  }
+  if(f===3){
+    return`Create a COMMERCIAL video prompt:\nBrand: ${v('ad-br')||'luxury perfume'}\nStyle: ${v('ad-sty')}\nCharacter: ${v('ad-ch')||'elegant protagonist'}\nLocation: ${v('ad-lo')||'luxury interior'}\nScene: ${v('ad-sc')||''}\nDuration: ${v('ad-dur')||'15'}s, ${v('ad-rat')}\n\nLuxury look: shallow DOF, warm aspirational tones, highlights not blown out.`;
+  }
+  if(f===4){
+    return`Create an ANIMATION video prompt:\nStyle: ${v('an-sty')}\nCharacter: ${v('an-ch')||'a young protagonist'}\nStory: ${v('an-st')||'character goes on an adventure'}\nDuration: ${v('an-dur')||'15'}s, ${v('an-rat')}\n\nDeclare style first. <<<image_1>>> as character AND style reference. Maintain style ALL frames.`;
+  }
+  return`Create the best video prompt for:\n${v('free')||'A cinematic scene.'}\n\nChoose the best format. Optimize for virality and cinematic quality.`;
+}
+
+function v(id){return document.getElementById(id)?.value?.trim()||'';}
+
+// ═══ TEMPLATE GENERATORS ═══
+function genFace(){
+  const archMap={'Action Hero / Protagonist — strong, determined':'Strong build, determined expression, rugged look',
+    'Spy / Secret Agent — sharp features, controlled':'Sharp refined features, controlled calm expression',
+    'Police Officer — American cop uniform':'American policeman in uniform',
+    'K-Pop Idol — flawless, expressive, idol-level beauty':'K-pop idol level beauty, flawless skin, expressive eyes',
+    'Villain / Antagonist — intense, commanding':'Intense piercing gaze, commanding presence',
+    'Warrior / Fighter — athletic, battle-ready':'Athletic build, battle-ready posture',
+    'Lover / Romance Lead — warm, expressive eyes':'Warm expressive eyes, approachable smile',
+    'Fantasy / Sci-Fi Character — otherworldly':'Otherworldly features, fantastical quality'};
+  const gen=v('c-gen'), eth=v('c-eth'), face=v('c-face'), hair=v('c-hair'), fh=v('c-fhair'), arch=v('c-arch');
+  let parts=[`A close up of a ${gen.toLowerCase()}${eth?', '+eth:''}`];
+  if(face) parts.push(face); else if(archMap[arch]) parts.push(archMap[arch]);
+  if(hair) parts.push(hair);
+  if(fh) parts.push(fh);
+  document.getElementById('face-txt').textContent=parts.join(', ');
+  document.getElementById('face-out').style.display='block';
+}
+
+function genOutfit(){
+  const type=v('o-type'), col=v('o-col'), det=v('o-det'), acc=v('o-acc');
+  let parts=[];
+  if(col) parts.push(col+' '+type.toLowerCase()); else parts.push(type);
+  if(det) parts.push(det);
+  if(acc) parts.push(acc);
+  document.getElementById('outfit-txt').textContent=parts.join('. ');
+  document.getElementById('outfit-out').style.display='block';
+}
+
+function genLoc(){
+  const moodMap={'Elegant & luxurious — warm gold tones':'Elegant and luxurious atmosphere, warm gold tones, aspirational mood',
+    'Dark & ominous — teal shadows':'Dark ominous atmosphere, teal shadows',
+    'Tense & claustrophobic':'Tense claustrophobic space',
+    'Epic & vast — sense of scale':'Epic scale, vast open vistas',
+    'Abandoned & melancholic — remnants of life':'Abandoned and melancholic, remnants of past life',
+    'Industrial & raw':'Industrial rawness, exposed metal and concrete',
+    'Mystical & atmospheric':'Mystical atmospheric quality, ethereal glow',
+    'Comedic suburban normalcy':'Mundane suburban setting, comedic normalcy'};
+  const lightMap={'Night interior — warm practical lights':'Warm golden interior lighting',
+    'Pre-dawn — blue cold transitioning to first gold':'Pre-dawn blue light with first pale gold rays',
+    'Midday — harsh direct sunlight':'Harsh direct midday sunlight, strong hard shadows',
+    'Golden hour — warm haze, long shadows':'Golden hour warm haze, long directional shadows',
+    'DVR/security camera flat look':'Flat digital sensor look, low dynamic range',
+    'Overcast storm — grey flat light':'Overcast storm, grey flat diffused light',
+    'Neon-lit urban night':'Neon-lit urban night, colorful reflections',
+    'Arena spotlights — harsh overhead':'Bright arena spotlights, harsh overhead'};
+  let p=v('l-type');
+  const mood=v('l-mood'), light=v('l-light'), det=v('l-det');
+  if(moodMap[mood]) p+='. '+moodMap[mood];
+  if(lightMap[light]) p+='. '+lightMap[light];
+  if(det) p+='. '+det;
+  document.getElementById('loc-txt').textContent=p;
+  document.getElementById('loc-out').style.display='block';
+}
+
+// ═══ COPY ═══
+function copyEl(id,btn){copyText(document.getElementById(id).textContent,btn);}
+function copyText(text,btn){
+  navigator.clipboard.writeText(text).then(()=>setCopied(btn)).catch(()=>{
+    const t=document.createElement('textarea');
+    t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);
+    setCopied(btn);
+  });
+}
+function setCopied(btn){
+  if(!btn)return;
+  const orig=btn.textContent;
+  btn.textContent='✓ COPIADO';btn.classList.add('ok');
+  setTimeout(()=>{btn.textContent=orig;btn.classList.remove('ok');},2000);
+}
+
+// ═══ INIT ═══
+updateApiBtn();
+</script>
+
+</body>
+</html>
